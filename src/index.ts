@@ -18,13 +18,13 @@ export class DiscreteSample {
     return search(cdf, 0, len, Math.random() * max);
   }
 
-  public static sample(pdf: ArrayLike<number>, max?: number) {
+  public static sample(pdf: ArrayLike<number>, sum?: number) {
     const len = pdf.length;
-    if (typeof max === 'undefined') {
-      max = 0;
-      for (let i = 0; i < len; i++) { max += pdf[i]; }
+    if (typeof sum === 'undefined') {
+      sum = 0;
+      for (let i = 0; i < len; i++) { sum += pdf[i]; }
     }
-    return samplePDF(pdf, len, Math.random() * max);
+    return samplePDF(pdf, len, Math.random() * sum);
   }
 
   public static reject_sample(pdf: ArrayLike<number>, max?: number) {
@@ -37,5 +37,9 @@ export class DiscreteSample {
       const bucket = Math.floor(Math.random() * len);
       if (Math.random() * max < pdf[bucket]) { return bucket; }
     }
+  }
+  
+  public static sample_cdf(cdf: ArrayLike<number>) {
+    return search(cdf, 0, cdf.length, Math.random() * cdf[cdf.length-1]);
   }
 }
