@@ -1,5 +1,17 @@
 import { pdf2cdf, samplePDF, search } from "./lib";
 
+export class ApproximateDiscreteSample {
+  private constructor(
+    private s: ArrayLike<number>,
+    private precision: number,
+    public readonly len: number,
+  ) { }
+
+  sample() {
+    return this.s[Math.floor(Math.random() * this.precision)];
+  }
+}
+
 export class DiscreteSample {
   private constructor(private cdf: ArrayLike<number>, public readonly len: number, private max: number) { }
 
@@ -16,6 +28,27 @@ export class DiscreteSample {
   sample() {
     const { cdf, len, max } = this;
     return search(cdf, 0, len, Math.random() * max);
+  }
+
+  approximate(precision: number): ApproximateDiscreteSample;
+  approximate(samples: ArrayLike<number> & { [key: number]: number; }): ApproximateDiscreteSample;
+  approximate(arg: number | (ArrayLike<number> & { [key: number]: number; })) {
+    const { cdf, len, max } = this;
+    let samples: ArrayLike<number> & { [key: number]: number; };
+    let precision: number;
+    if (typeof arg === 'number') {
+      precision = arg;
+      samples = len <= 256 ? new Uint8Array(arg) :
+                      len <= 2**16 ? new Uint16Array(arg) :
+                      new Uint32Array(arg);
+    } else {
+      samples = arg;
+      precision = arg.length;
+    }
+    for (let i = 0; i < len; i++) {
+      samples[i] = search(cdf, 0, len, Math.random() * max);
+    }
+    return new (ApproximateDiscreteSample as any)(samples, precision, len);
   }
 
   public static sample(pdf: ArrayLike<number>, sum?: number) {
